@@ -1,32 +1,41 @@
 import streamlit as st
 import openai
 
-# การตั้งค่าหน้าจอ
+# Configuration
 st.set_page_config(page_title="Thai Code Prompt AI", layout="wide")
 
 st.title("🇹🇭 Thai NLP to AI Coding Prompt")
-st.subheader("แปลงภาษาไทยเป็น Prompt เขียนโค้ดระดับโปร")
+st.subheader("Convert Thai requirements to Professional English Prompts")
 
-# ดึง API Key จาก Secret ของ Streamlit
+# Load API Key from Streamlit Secrets
 try:
     openai.api_key = st.secrets["OPENAI_API_KEY"]
 except:
-    st.error("กรุณาตั้งค่า API Key ใน Streamlit Cloud Secrets")
+    st.error("Please configure API Key in Streamlit Cloud Secrets")
 
-# ส่วนรับข้อมูล
-user_input = st.text_area("อธิบายสิ่งที่อยากให้ AI เขียนโค้ด (ภาษาไทย):", placeholder="เช่น: สร้างหน้าเว็บขายของหน้าแรกด้วย HTML/CSS แบบ Responsive")
-tech_stack = st.text_input("Tech Stack ที่ต้องการ:", "React, Tailwind CSS")
+# Input Section
+user_input = st.text_area("Describe your requirement (Thai):", placeholder="เช่น: สร้างหน้าเว็บ Landing Page ด้วย HTML/CSS")
+tech_stack = st.text_input("Preferred Tech Stack:", "React, Tailwind CSS")
 
-if st.button("สร้าง Prompt"):
+if st.button("Generate Prompt"):
     if user_input:
-        with st.spinner("กำลังประมวลผล..."):
-            prompt = f"Act as a Senior Developer. Translate this Thai requirement into a detailed, technical English prompt for coding: {user_input}. Specific technologies: {tech_stack}. Format the output with clear sections: Role, Goal, Technical Steps, and Constraints."
+        with st.spinner("Processing..."):
+            # Meta-Prompt for the AI
+            sys_message = "You are a Senior Software Architect. Translate the user's Thai requirement into a highly detailed, professional English prompt for AI coding assistants."
+            user_message = f"Requirement: {user_input}\nTech Stack: {tech_stack}"
             
-            response = openai.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=[{"role": "user", "content": prompt}]
-            )
-            result = response.choices[0].message.content
-            st.code(result, language="markdown")
+            try:
+                response = openai.chat.completions.create(
+                    model="gpt-3.5-turbo",
+                    messages=[
+                        {"role": "system", "content": sys_message},
+                        {"role": "user", "content": user_message}
+                    ]
+                )
+                result = response.choices[0].message.content
+                st.code(result, language="markdown")
+                st.success("Prompt Generated! Copy this to your AI Code Editor.")
+            except Exception as e:
+                st.error(f"Error: {e}")
     else:
-        st.warning("กรุณากรอกความต้องการก่อนครับ")
+        st.warning("Please enter your requirement first.")
